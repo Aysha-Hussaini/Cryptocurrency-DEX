@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@openzeppelin/contracts": "^4.5.0",
     "identicon.js": "^2.3.3"
   }
 }

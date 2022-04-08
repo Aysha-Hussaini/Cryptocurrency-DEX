@@ -1,11 +1,13 @@
 import React, { Component } from "react";
-import SimpleStorageContract from "./contracts/SimpleStorage.json";
 import getWeb3 from "./getWeb3";
+import Navbar from  "./Navbar";
+import Main from "./Main";
+import EthSwap from "./contracts/EthSwap.json";
+import Token from "./contracts/Token.json";
 
 import "./App.css";
 
 class App extends Component {
-  state = { storageValue: 0, web3: null, accounts: null, contract: null };
 
   componentDidMount = async () => {
     try {
@@ -14,18 +16,44 @@ class App extends Component {
 
       // Use web3 to get the user's accounts.
       const accounts = await web3.eth.getAccounts();
+      const account = accounts[0];
+      const ethBalance = await web3.eth.getBalance(account);
 
-      // Get the contract instance.
+      this.setState({web3, account, ethBalance});
+
+      //Get the Token contract instance.
       const networkId = await web3.eth.net.getId();
-      const deployedNetwork = SimpleStorageContract.networks[networkId];
-      const instance = new web3.eth.Contract(
-        SimpleStorageContract.abi,
-        deployedNetwork && deployedNetwork.address,
-      );
+      const deployedNetworkToken = Token.networks[networkId];
+      if (deployedNetworkToken) {
+        const token = new web3.eth.Contract(
+          Token.abi,
+          deployedNetworkToken && deployedNetworkToken.address,
+        );
+        
+        const tokenBalance = await token.methods.balanceOf(this.state.account).call();
 
-      // Set web3, accounts, and contract to the state, and then proceed with an
-      // example of interacting with the contract's methods.
-      this.setState({ web3, accounts, contract: instance }, this.runExample);
+        this.setState ({token, tokenBalance: tokenBalance.toString()});
+      } else {
+        window.alert("The contract hasn't been deployed on detected network");
+      }
+      
+      //Get the EthSwap contract instance.
+      const deployedNetworkEthSwap = EthSwap.networks[networkId];
+
+      if(deployedNetworkEthSwap){
+        const ethSwap = new web3.eth.Contract(
+          EthSwap.abi,
+          deployedNetworkEthSwap && deployedNetworkEthSwap.address,
+        );
+        
+        this.setState ({ethSwap});
+        
+      } else {
+        window.alert("The contract hasn't been deployed on detected network");
+      }
+      this.setState({loading: false});
+
+      
     } catch (error) {
       // Catch any errors for any of the above operations.
       alert(
@@ -35,39 +63,59 @@ class App extends Component {
     }
   };
 
-  runExample = async () => {
-    const { accounts, contract } = this.state;
+  constructor(props){
+    super(props)
+    this.state = { 
+      web3: null, 
+      account: null, 
+      ethBalance: null, 
+      token: null, 
+      tokenBalance: null, 
+      ethSwap: null,
+      loading : true, 
+    };
+  }
+  
+  buyTokens = (etherAmount) => {
+    this.setState({loading: true});
+    this.state.ethSwap.methods.buyTokens().send({from: this.state.account, value: etherAmount}).on('transactionHash', (hash) => {
+      this.setState({loading:false});
+    });
+  }
 
-    // Stores a given value, 5 by default.
-    await contract.methods.set(6).send({ from: accounts[0] });
+  sellTokens = (tokenAmount) => {
+    this.setState({loading: true});
+    this.state.ethSwap.methods.sellTokens(tokenAmount).send({from: this.state.account}).on('transactionHash', (hash) =>{
+      this.setState({loading: false});
+    });
+  }
 
-    // Get the value from the contract to prove it worked.
-    const response = await contract.methods.get().call();
 
-    // Update state with the result.
-    this.setState({ storageValue: response });
-  };
-
-  render() {
-    if (!this.state.web3) {
-      return <div>Loading Web3, accounts, and contract...</div>;
+  render(){
+    let content;
+    if(this.state.loading){
+      content = <p className="loading text-base text-center font-semibold"> Loading.... </p>
+    } else {
+      content = <Main 
+      web3={this.state.web3}
+      buyTokens={this.buyTokens}
+      ethBalance={this.state.ethBalance}
+      tokenBalance={this.state.tokenBalance}
+      
+      />
     }
     return (
-      <div className="App">
-        <h1>Good to Go!</h1>
-        <p>Your Truffle Box is installed and ready.</p>
-        <h2>Smart Contract Example</h2>
-        <p>
-          If your contracts compiled and migrated successfully, below will show
-          a stored value of 5 (by default).
-        </p>
-        <p>
-          Try changing the value stored on <strong>line 42</strong> of App.js.
-        </p>
-        <div>The stored value is: {this.state.storageValue}</div>
+      <div>
+        < Navbar account = {this.state.account}/>
+        <div className="container-fluid mt-5">
+          <div >
+            <main role="main"  >
+            {content}
+            </main>
+          </div>
+        </div>
       </div>
     );
   }
 }
-
 export default App;

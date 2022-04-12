@@ -11,6 +11,7 @@ class BuyForm extends Component {
          output:0
       }
    }
+  
   render(){
     return (
       <form onSubmit={(event) => {
@@ -33,7 +34,6 @@ class BuyForm extends Component {
                      this.setState({
                         output : etherAmount * 150
                      })
-                     console.log(this.state.output)
                   }}
                   ref = {(input) => {this.input = input}}
                   required/>
@@ -48,7 +48,7 @@ class BuyForm extends Component {
          <div className="mb-6">
             <label className="block mb-2 text-sm font-medium text-gray-900 ">Output</label>
             <div className="flex">
-               <input type="text" id="disabled-input-2" className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 cursor-not-allowed " value={this.state.output} disabled readOnly />
+               <input type="text" id="disabled-input-2" className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-l-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 cursor-not-allowed " value={this.state.output} disabled readOnly />
                <span className="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 rounded-r-md border border-l-0 border-gray-300 ">
                   <FontAwesomeIcon icon={faBolt}  />
                   EXT
